@@ -27,16 +27,6 @@ import java.nio.file.{Files, Paths}
 
 object YamlReader {
 
-  def main(args:Array[String]):Unit = {
-
-    val path = "/sample.yaml"
-    val uri = getClass.getResource(path).toURI
-
-    val jsonObject = fromUri(uri)
-    println(jsonObject)
-
-  }
-
   def fromUri(uri:URI):JsonObject = {
     /*
      * Read YAML file from URI and convert
