@@ -19,42 +19,57 @@ package de.kp.works.sigma.registry
  */
 
 import com.google.gson.{JsonArray, JsonObject}
-import de.kp.works.sigma.{SigmaConf, YamlReader}
+import de.kp.works.sigma.YamlReader
 
 import java.io.File
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-object ConfigRegistry extends Registry {
+object RuleRegistry extends Registry {
   /**
-   * Derived folders
+   * Derived folder
    */
-  private val toolsFolder = s"$sigmaFolder/tools"
-  private val confFolder  = s"$toolsFolder/config"
-
+  private val rulesFolder = s"$sigmaFolder/rules"
+  /**
+   * Rule index
+   */
   private val registryIndex = mutable.HashMap.empty[String, Seq[String]]
 
   def load():Unit = {
 
     registryJson.clear()
-    registerFiles(new File(confFolder))
+    registerFiles(new File(rulesFolder))
 
     buildIndex()
 
   }
   /**
+   * This method is an internal method to retrieve
+   * the rule files for a certain base path.
+   */
+  def getRule(rule:String):JsonObject = {
+
+    try {
+      val uri = new File(s"$rulesFolder/$rule").toURI
+      YamlReader.fromUri(uri)
+
+    } catch {
+      case _:Throwable => new JsonObject
+    }
+
+  }
+  /**
    * Based on the basic registry, we also provide
-   * an index that assigns backends to configuration
-   * files
+   * an index that assigns tags to rule files
    */
   override protected def buildIndex():Unit = {
 
     registryJson.foreach(configJson => {
 
-      val backends = configJson.get("backends").getAsJsonArray
+      val tags = configJson.get("tags").getAsJsonArray
       val path = configJson.get("path").getAsString
 
-      if (backends.size == 0) {
+      if (tags.size == 0) {
         var paths = if (!registryIndex.contains("*")) {
           Seq.empty[String]
         }
@@ -65,8 +80,8 @@ object ConfigRegistry extends Registry {
         registryIndex += "*" -> paths
       }
       else {
-        backends.foreach(backend => {
-          val key = backend.getAsString
+        tags.foreach(tag => {
+          val key = tag.getAsString
           var paths = if (!registryIndex.contains(key)) {
             Seq.empty[String]
           }
@@ -82,53 +97,56 @@ object ConfigRegistry extends Registry {
     })
 
   }
-  /**
-   * This method is an internal method to retrieve
-   * the configuration files for a certain base path.
-   */
-  def getConfig(config:String):JsonObject = {
 
-    try {
-      val uri = new File(s"$confFolder/$config").toURI
-      YamlReader.fromUri(uri)
+  override protected def registerFile(file:File):Unit = {
 
-    } catch {
-      case _:Throwable => new JsonObject
-    }
-
-  }
-
-  protected override def registerFile(file:File):Unit = {
-
-    val path = file.getAbsolutePath.replace(s"$confFolder/", "")
+    val path = file.getAbsolutePath.replace(s"$rulesFolder/", "")
     if (!path.endsWith(".yml")) return
+    println(path)
     /*
      * Transform *.yaml configuration file into
      * JsonObject and extract relevant metadata
      */
     val uri = file.toURI
     val json = YamlReader.fromUri(uri)
-    /**
-     * This method currently extracts the backends
-     * and the respective title, and assigns the
-     * base path to the configuration file
+    /*
+     * Extract metadata from rule
      */
-    val title = json.get("title").getAsString
-    val backends = try {
-      json.get("backends").getAsJsonArray
+    val ruleJson = new JsonObject
+    ruleJson.addProperty("id", getString(json, "id"))
+
+    ruleJson.addProperty("title", getString(json, "title"))
+    ruleJson.addProperty("description", getString(json, "description"))
+
+    ruleJson.addProperty("author", getString(json, "author"))
+    ruleJson.addProperty("date", getString(json, "date"))
+
+    ruleJson.addProperty("status", getString(json, "status"))
+    ruleJson.addProperty("level", getString(json, "level"))
+
+    ruleJson.add("tags", getTags(json))
+    registryJson += ruleJson
+
+  }
+
+  private def getString(json:JsonObject, key:String):String = {
+
+    try {
+      json.get(key).getAsString
 
     } catch {
-      case _:Throwable => new JsonArray
+      case _:Throwable => ""
     }
+  }
 
-    val configJson = new JsonObject
+  private def getTags(json:JsonObject):JsonArray = {
 
-    configJson.addProperty(title, title)
-    configJson.add("backends", backends)
+    try {
+      json.get("tags").getAsJsonArray
 
-    configJson.addProperty("path", path)
-    registryJson += configJson
-
+    } catch {
+      case _: Throwable => new JsonArray
+    }
   }
 
 }
