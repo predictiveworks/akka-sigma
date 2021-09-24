@@ -18,10 +18,14 @@ package de.kp.works.sigma
  *
  */
 
+/**
+ * The [SigmaServer] is part of the PredictiveWorks. Cy(I)IoT
+ * framework and supports cyber situational awareness
+ */
 object SigmaServer extends BaseServer {
 
   override var programName: String = "SigmaServer"
-  override var programDesc: String = "Access Sigma rules to Java & Scala."
+  override var programDesc: String = "Provide access to Sigma rules from Java & Scala."
 
   override def launch(args: Array[String]): Unit = {
 
