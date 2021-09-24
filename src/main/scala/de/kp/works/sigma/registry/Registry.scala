@@ -27,8 +27,8 @@ import scala.collection.mutable
 trait Registry {
   /**
    * We expect that the overall configuration is initialized
-   * when build a [SigmaWorker]. If this is not the case here,
-   * we continue with the internal configuration
+   * when we build a [SigmaWorker]. If this is not the case
+   * here, we continue with the internal configuration
    */
   if (!SigmaConf.isInit) SigmaConf.init()
   /**

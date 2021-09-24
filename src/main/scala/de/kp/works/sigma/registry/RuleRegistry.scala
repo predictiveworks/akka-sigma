@@ -125,6 +125,8 @@ object RuleRegistry extends Registry {
     ruleJson.addProperty("level", getString(json, "level"))
 
     ruleJson.add("tags", getTags(json))
+    ruleJson.addProperty("path", path)
+
     registryJson += ruleJson
 
   }

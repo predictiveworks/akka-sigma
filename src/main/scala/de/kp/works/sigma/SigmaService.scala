@@ -18,12 +18,48 @@ package de.kp.works.sigma
  *
  */
 
+import akka.actor.Props
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.Config
+import de.kp.works.sigma.actor.RuleActor
+import de.kp.works.sigma.registry._
 
 class SigmaService extends BaseService {
 
-  override def buildRoute(): Route = ???
+  import SigmaRoutes._
 
-  override def onStart(cfg: Config): Unit = ???
+  private val ruleActor = system
+    .actorOf(Props(new RuleActor()), RULE_ACTOR)
+
+  private val actors = Map(
+    RULE_ACTOR -> ruleActor
+  )
+
+  override def buildRoute(): Route = {
+
+    val routes = new SigmaRoutes(actors)
+    /*
+     * Routes for file upload; the current implementation
+     * supports upload of configuration & rule files.
+     */
+    routes.uploadConf ~
+    routes.uploadRule
+
+  }
+  /**
+   * As part of the startup mechanism, this Sigma service
+   * converts available Sigma configurations and rules into
+   * an in-memory data structure to accelerate data access
+   */
+  override def onStart(cfg: Config): Unit = {
+    /*
+     * CONFIGURATION
+     */
+    ConfigRegistry.load()
+    /*
+     * RULES
+     */
+    RuleRegistry.load()
+  }
 }

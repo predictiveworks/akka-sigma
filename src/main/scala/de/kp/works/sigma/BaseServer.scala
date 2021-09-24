@@ -42,7 +42,7 @@ trait BaseServer {
 
     } catch {
       case t: Throwable =>
-
+        t.printStackTrace()
         println("[ERROR] ------------------------------------------------")
         println(s"[ERROR] $programName cannot be started: " + t.getMessage)
         println("[ERROR] ------------------------------------------------")
