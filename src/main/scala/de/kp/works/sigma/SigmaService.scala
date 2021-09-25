@@ -22,18 +22,18 @@ import akka.actor.Props
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.Config
-import de.kp.works.sigma.actor.RuleActor
+import de.kp.works.sigma.actor.ConvertActor
 import de.kp.works.sigma.registry._
 
 class SigmaService extends BaseService {
 
   import SigmaRoutes._
 
-  private val ruleActor = system
-    .actorOf(Props(new RuleActor()), RULE_ACTOR)
+  private val convertActor = system
+    .actorOf(Props(new ConvertActor()), CONVERT_ACTOR)
 
   private val actors = Map(
-    RULE_ACTOR -> ruleActor
+    CONVERT_ACTOR -> convertActor
   )
 
   override def buildRoute(): Route = {
@@ -44,6 +44,7 @@ class SigmaService extends BaseService {
      * supports upload of configuration & rule files.
      */
     routes.uploadConf ~
+    routes.uploadConfWithSegment ~
     routes.uploadRule
 
   }

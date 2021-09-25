@@ -27,7 +27,7 @@ import java.nio.file.{Files, Paths}
  * The [RuleActor] is responsible for transforming
  * a certain rule into a target
  */
-class RuleActor extends BaseActor {
+class ConvertActor extends BaseActor {
 
   private val CONFIG = "config"
   private val NAME   = "name"
