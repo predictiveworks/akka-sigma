@@ -19,19 +19,25 @@ package de.kp.works.sigma
  */
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.http.scaladsl.model.{Multipart, StatusCodes}
+import akka.http.scaladsl.model.ContentTypes._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.BasicDirectives.extractRequestContext
+import akka.pattern.ask
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Source}
-import akka.util.ByteString
+import akka.util.{ByteString, Timeout}
+import de.kp.works.http.CORS
+import de.kp.works.sigma.actor.BaseActor._
 import de.kp.works.sigma.file.UploadActor
 import de.kp.works.sigma.file.UploadActor.Uploaded
 
 import java.nio.file.Paths
 import java.util.UUID
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 case class FileSource(fileName: String, source: Source[ByteString, Any])
@@ -43,9 +49,13 @@ object SigmaRoutes {
 
 }
 
-class SigmaRoutes(actors:Map[String, ActorRef])(implicit system: ActorSystem) {
+class SigmaRoutes(actors:Map[String, ActorRef])(implicit system: ActorSystem) extends CORS {
 
   implicit lazy val context: ExecutionContextExecutor = system.dispatcher
+  /**
+ 	 * Common timeout for all Akka connections
+   */
+  implicit val timeout: Timeout = Timeout(5.seconds)
 
   import SigmaRoutes._
   /**
@@ -62,6 +72,53 @@ class SigmaRoutes(actors:Map[String, ActorRef])(implicit system: ActorSystem) {
     .getString("uploadFolder")
 
   private val convertActor = actors(CONVERT_ACTOR)
+
+  def convert:Route =
+    path("rule" / "convert") {
+      post {
+        extractConvert
+      }
+    }
+
+  private def extractConvert = extract(convertActor)
+
+  private def extract(actor:ActorRef) = {
+    extractRequest { request =>
+      complete {
+        /*
+         * The Http(s) request is sent to the respective
+         * actor and the actor' response is sent to the
+         * requester as response.
+         */
+        val future = actor ? request
+        Await.result(future, timeout.duration) match {
+          case Response(Failure(e)) =>
+            val message = e.getMessage
+            jsonResponse(message)
+          case Response(Success(answer)) =>
+            val message = answer.asInstanceOf[String]
+            jsonResponse(message)
+        }
+      }
+    }
+  }
+
+  private def jsonResponse(message:String) = {
+
+    val length = message.getBytes.length
+
+    val headers = List(
+      `Content-Type`(`application/json`),
+      `Content-Length`(length)
+    )
+
+    HttpResponse(
+      status=StatusCodes.OK,
+      headers = headers,
+      entity = ByteString(message),
+      protocol = HttpProtocols.`HTTP/1.1`)
+
+  }
 
   /**
    * A HTTP route to upload a Sigma configuration *.yml;
@@ -129,9 +186,8 @@ class SigmaRoutes(actors:Map[String, ActorRef])(implicit system: ActorSystem) {
           FileSource(fileName, bodyPart.entity.dataBytes)
         }
         onComplete(uploadFile(fileSource, category, mode)) {
-          case Success(_) => {
-           complete("File uploaded")
-          }
+          case Success(_) =>
+            complete("File uploaded")
           case Failure(exception) => complete(StatusCodes.InternalServerError -> exception.getMessage)
         }
       }

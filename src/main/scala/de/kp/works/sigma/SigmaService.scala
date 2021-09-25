@@ -43,9 +43,11 @@ class SigmaService extends BaseService {
      * Routes for file upload; the current implementation
      * supports upload of configuration & rule files.
      */
+    routes.convert ~
     routes.uploadConf ~
     routes.uploadConfWithSegment ~
-    routes.uploadRule
+    routes.uploadRule ~
+    routes.uploadRuleWithSegment
 
   }
   /**
