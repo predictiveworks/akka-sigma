@@ -1,5 +1,5 @@
 
-# Sigma Scala
+# Akka Sigma
 
 This project implements an Akka-based wrapper for **Sigma**.
 
