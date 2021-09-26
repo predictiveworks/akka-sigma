@@ -2,10 +2,10 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.kp.works</groupId>
-  <artifactId>sigma-scala</artifactId>
+  <artifactId>akka-sigma</artifactId>
   <version>0.4.0</version>
 
-  <name>Sigma Scala</name>
+  <name>Akka Sigma</name>
   <description></description>
 
   <inceptionYear>2021</inceptionYear>
