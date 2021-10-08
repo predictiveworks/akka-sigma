@@ -54,7 +54,7 @@ object SigmaConf {
         true
 
       } catch {
-        case t: Throwable =>
+        case _: Throwable =>
           false
       }
     }

@@ -20,20 +20,15 @@ package de.kp.works.sigma.actor
 
 import akka.http.scaladsl.model.HttpRequest
 import com.google.gson.{JsonArray, JsonObject}
-import de.kp.works.sigma.SigmaWorker
+import de.kp.works.sigma.{SigmaRuleStore, SigmaWorker}
 
 import java.nio.file.{Files, Paths}
 /**
  * The [RuleActor] is responsible for transforming
  * a certain rule into a target
  */
-class ConvertActor extends BaseActor {
+class ConvertRuleActor(store:SigmaRuleStore) extends BaseActor {
 
-  private val CONFIG = "config"
-  private val NAME   = "name"
-  private val RULE   = "rule"
-  private val TARGET = "target"
-  private val TYPE   = "type"
   /**
    * Extract the base folder where the `sigma` project is
    * located
@@ -94,7 +89,20 @@ class ConvertActor extends BaseActor {
     val result = new JsonArray
 
     worker.run(target, rule.get, config).foreach(result.add)
-    result.toString
+    /*
+     * Persist the respective conversion to the
+     * Sigma rule store
+     */
+    val k = java.util.UUID.randomUUID().toString
+    val v = result.toString
+
+    store.store[String](k, v)
+
+    val response = new JsonObject
+    response.addProperty(UID, k)
+    response.add(VALUES, result)
+
+    response.toString
 
   }
   /**

@@ -24,7 +24,10 @@
     <bouncycastle.version>1.68</bouncycastle.version>
 
     <gson.version>2.8.6</gson.version>
+    <guava.version>30.1-jre</guava.version>
     <jackson.version>2.10.1</jackson.version>
+    <rocksdb.version>6.6.4</rocksdb.version>
+
     <scopt.version>4.0.0</scopt.version>
     <!--
     The Scala version that has been used for testing
@@ -74,7 +77,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>30.1-jre</version>
+      <version>${guava.version}</version>
     </dependency>
 
     <!--
@@ -98,6 +101,14 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>${gson.version}</version>
+    </dependency>
+
+    <!-- ROCKSDB
+    -->
+    <dependency>
+      <groupId>org.rocksdb</groupId>
+      <artifactId>rocksdbjni</artifactId>
+      <version>${rocksdb.version}</version>
     </dependency>
 
     <!-- SCOPT

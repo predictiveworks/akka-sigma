@@ -44,8 +44,9 @@ case class FileSource(fileName: String, source: Source[ByteString, Any])
 
 object SigmaRoutes {
 
-  val CONVERT_ACTOR = "convert_actor"
-  val UPLOAD_ACTOR  = "upload_actor"
+  val CONVERT_RULE_ACTOR    = "convert_rule_actor"
+  val READ_CONVERSION_ACTOR = "read_conversion_actor"
+  val UPLOAD_ACTOR          = "upload_actor"
 
 }
 
@@ -71,16 +72,35 @@ class SigmaRoutes(actors:Map[String, ActorRef])(implicit system: ActorSystem) ex
   protected val uploadFolder: String = SigmaConf.getCfg.get
     .getString("uploadFolder")
 
-  private val convertActor = actors(CONVERT_ACTOR)
-
-  def convert:Route =
+  private val convertRuleActor = actors(CONVERT_RULE_ACTOR)
+  private val Conversion = actors(READ_CONVERSION_ACTOR)
+  /**
+   * This route receives a conversion request
+   * and sends the converted Sigma rule back to
+   * the requester.
+   */
+  def convertRule:Route =
     path("rule" / "convert") {
       post {
-        extractConvert
+        extractConvertRule
+      }
+    }
+  /**
+   * This route receives the unique identifier
+   * of a previously converted rule, extracts
+   * the conversion result from the Sigma store
+   * and sends the results back.
+   */
+  def readConversion:Route =
+    path("conversion" / "read") {
+      post {
+        extractConversionRead
       }
     }
 
-  private def extractConvert = extract(convertActor)
+  private def extractConvertRule = extract(convertRuleActor)
+
+  private def extractConversionRead = extract(Conversion)
 
   private def extract(actor:ActorRef) = {
     extractRequest { request =>

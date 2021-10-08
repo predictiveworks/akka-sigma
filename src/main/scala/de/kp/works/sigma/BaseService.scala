@@ -48,7 +48,7 @@ trait BaseService {
    */
   implicit val timeout: Timeout = Timeout(5.seconds)
 
-  def buildRoute():Route
+  def buildRoute(cfg:Config):Route
 
   def start(conf:Option[String]):Unit = {
 
@@ -63,7 +63,7 @@ trait BaseService {
 
     val cfg = SigmaConf.getCfg.get
 
-    val routes = buildRoute()
+    val routes = buildRoute(cfg)
     val binding = cfg.getConfig("binding")
 
     val host = binding.getString("host")

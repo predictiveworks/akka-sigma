@@ -22,28 +22,46 @@ import akka.actor.Props
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.Config
-import de.kp.works.sigma.actor.ConvertActor
+import de.kp.works.sigma.actor.{ConvertRuleActor, ReadConversionActor}
 import de.kp.works.sigma.registry._
 
 class SigmaService extends BaseService {
 
   import SigmaRoutes._
 
-  private val convertActor = system
-    .actorOf(Props(new ConvertActor()), CONVERT_ACTOR)
+  override def buildRoute(cfg:Config): Route = {
 
-  private val actors = Map(
-    CONVERT_ACTOR -> convertActor
-  )
+    /*
+     * Initialize [SigmaRuleStore]: This store is used
+     * to persist transformed Sigma rules, in order to
+     * access these rules in subsequent data processing.
+     */
+    val path = cfg.getConfig("rocksdb").getString("path")
+    val persistence = SigmaPersistence.getOrCreate(path)
 
-  override def buildRoute(): Route = {
+    val store = new SigmaRuleStore(persistence)
+
+    val convertActor = system
+      .actorOf(Props(new ConvertRuleActor(store)), CONVERT_RULE_ACTOR)
+
+    val readActor = system
+      .actorOf(Props(new ReadConversionActor(store)), READ_CONVERSION_ACTOR)
+
+    val actors = Map(
+      CONVERT_RULE_ACTOR    -> convertActor,
+      READ_CONVERSION_ACTOR -> readActor
+    )
 
     val routes = new SigmaRoutes(actors)
+    /*
+     * Routes for online HTTP(s) requests
+     */
+    routes.convertRule ~
+    routes.readConversion ~
     /*
      * Routes for file upload; the current implementation
      * supports upload of configuration & rule files.
      */
-    routes.convert ~
     routes.uploadConf ~
     routes.uploadConfWithSegment ~
     routes.uploadRule ~

@@ -35,6 +35,16 @@ import scala.util.Try
 abstract class BaseActor extends Actor with ActorLogging {
 
   import BaseActor._
+
+  protected val CONFIG     = "config"
+  protected val CONVERSION = "conversion"
+  protected val NAME       = "name"
+  protected val RULE       = "rule"
+  protected val TARGET     = "target"
+  protected val TYPE       = "type"
+  protected val UID        = "uid"
+  protected val VALUES     = "values"
+
   /**
    * The actor system is implicitly accompanied by a materializer,
    * and this materializer is required to retrieve the ByteString
